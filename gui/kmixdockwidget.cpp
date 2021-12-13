@@ -177,8 +177,14 @@ void KMixDockWidget::createMenuActions()
         menu->addAction(_dockMuteAction);
     }
 
+    QAction *action;
+
+    // "Show Hot Mic" dialog
+    action = _kmixMainWindow->actionCollection()->action("hot_mic");
+    if (action!=nullptr) menu->addAction(action);
+
     // "Select Master Channel" dialog
-    QAction *action = _kmixMainWindow->actionCollection()->action("select_master");
+    action = _kmixMainWindow->actionCollection()->action("select_master");
     if (action!=nullptr) menu->addAction(action);
 
     // "Configure KMix" settings
@@ -477,8 +483,16 @@ void KMixDockWidget::contextMenuAboutToShow()
         }
     }
 
+    QAction *action;
+
+    // Enable/disable "Show Hot Mic".
+    // It will only be disabled if there are no sound devices available at all.
+    // FIXME: disable if there are no microphones?
+    action = _kmixMainWindow->actionCollection()->action("select_mic");
+    if (action!=nullptr) action->setEnabled(Mixer::getGlobalMasterMixer()!=nullptr);
+
     // Enable/disable "Select Master Channel".
     // It will only be disabled if there are no sound devices available at all.
-    QAction *action = _kmixMainWindow->actionCollection()->action("select_master");
+    action = _kmixMainWindow->actionCollection()->action("select_master");
     if (action!=nullptr) action->setEnabled(Mixer::getGlobalMasterMixer()!=nullptr);
 }

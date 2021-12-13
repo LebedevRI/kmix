@@ -272,6 +272,7 @@ set(kmixgui_SRCS
   gui/kmixtoolbox.cpp
   gui/dialogaddview.cpp
   gui/dialogviewconfiguration.cpp
+  gui/hotmic.cpp
   gui/dialogselectmaster.cpp
   gui/dialogchoosebackends.cpp
   gui/guiprofile.cpp

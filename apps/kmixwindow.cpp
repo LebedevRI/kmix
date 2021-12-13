@@ -49,6 +49,7 @@
 #include "gui/kmixdockwidget.h"
 #include "gui/kmixtoolbox.h"
 #include "gui/dialogaddview.h"
+#include "gui/hotmic.h"
 #include "gui/dialogselectmaster.h"
 #include "dbus/dbusmixsetwrapper.h"
 #include "settings.h"
@@ -66,7 +67,7 @@ KMixWindow::KMixWindow(bool invisible, bool reset) :
 		KXmlGuiWindow(nullptr, Qt::WindowFlags(KDE_DEFAULT_WINDOWFLAGS|Qt::WindowContextHelpButtonHint)),
 		m_multiDriverMode(false), // -<- I never-ever want the multi-drivermode to be activated by accident
 		m_autouseMultimediaKeys(true),
-		m_dockWidget(), m_dsm(0), m_dontSetDefaultCardOnStart(false)
+                m_dockWidget(), m_hm(0), m_dsm(0), m_dontSetDefaultCardOnStart(false)
 {
 	setObjectName(QStringLiteral("KMixWindow"));
 	// disable delete-on-close because KMix might just sit in the background waiting for cards to be plugged in
@@ -118,7 +119,8 @@ KMixWindow::~KMixWindow()
 {
 	ControlManager::instance().removeListener(this);
 
-	delete m_dsm;
+        delete m_hm;
+        delete m_dsm;
 
 	// -1- Cleanup Memory: clearMixerWidgets
 	while (m_wsMixers->count() != 0)
@@ -188,11 +190,15 @@ void KMixWindow::initActions()
 	action->setText(i18n("Configure &Channels..."));
 	connect(action, SIGNAL(triggered(bool)), SLOT(slotConfigureCurrentView()));
 
-	action = actionCollection()->addAction(QStringLiteral("select_master"));
-	action->setText(i18n("Select Master Channel..."));
-	connect(action, SIGNAL(triggered(bool)), SLOT(slotSelectMaster()));
+        action = actionCollection()->addAction(QStringLiteral("hot_mic"));
+        action->setText(i18n("Show &Hot Mic..."));
+        connect(action, SIGNAL(triggered(bool)), SLOT(hotMic()));
 
-	action = actionCollection()->addAction(QStringLiteral("save_1"));
+        action = actionCollection()->addAction(QStringLiteral("select_master"));
+        action->setText(i18n("Select Master Channel..."));
+        connect(action, SIGNAL(triggered(bool)), SLOT(slotSelectMaster()));
+
+        action = actionCollection()->addAction(QStringLiteral("save_1"));
 	actionCollection()->setDefaultShortcut(action, Qt::CTRL + Qt::SHIFT + Qt::Key_1);
 	action->setText(i18n("Save volume profile 1"));
 	connect(action, SIGNAL(triggered(bool)), SLOT(saveVolumes1()));
@@ -1186,9 +1192,34 @@ void KMixWindow::slotConfigureCurrentView()
 		view->configureView();
 }
 
+void KMixWindow::slotHotMicClose(QObject*)
+{
+        m_hm = 0;
+}
 void KMixWindow::slotSelectMasterClose(QObject*)
 {
-	m_dsm = 0;
+        m_dsm = 0;
+}
+
+void KMixWindow::hotMic()
+{
+        const Mixer *mixer = Mixer::getGlobalMasterMixer();
+        if (mixer!=nullptr)
+        {
+                if (!m_hm)
+                {
+                        m_hm = new HotMic(this);
+                        connect(m_hm, SIGNAL(destroyed(QObject*)), this, SLOT(slotHotMicClose(QObject*)));
+                        m_hm->setAttribute(Qt::WA_DeleteOnClose, true);
+                        m_hm->show();
+                }
+                m_hm->raise();
+                m_hm->activateWindow();
+        }
+        else
+        {
+                KMessageBox::error(nullptr, KMixToolBox::noDevicesWarningString());
+        }
 }
 
 void KMixWindow::slotSelectMaster()
@@ -1196,15 +1227,15 @@ void KMixWindow::slotSelectMaster()
 	const Mixer *mixer = Mixer::getGlobalMasterMixer();
 	if (mixer!=nullptr)
 	{
-		if (!m_dsm)
+                if (!m_dsm)
 		{
-			m_dsm = new DialogSelectMaster(mixer, this);
-			connect(m_dsm, SIGNAL(destroyed(QObject*)), this, SLOT(slotSelectMasterClose(QObject*)));
-			m_dsm->setAttribute(Qt::WA_DeleteOnClose, true);
-			m_dsm->show();
+                        m_dsm = new DialogSelectMaster(mixer, this);
+                        connect(m_dsm, SIGNAL(destroyed(QObject*)), this, SLOT(slotSelectMasterClose(QObject*)));
+                        m_dsm->setAttribute(Qt::WA_DeleteOnClose, true);
+                        m_dsm->show();
 		}
-		m_dsm->raise();
-		m_dsm->activateWindow();
+                m_dsm->raise();
+                m_dsm->activateWindow();
 	}
 	else
 	{

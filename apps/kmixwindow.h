@@ -37,6 +37,7 @@ class KMixDockWidget;
 class KMixerWidget;
 class KMixWindow;
 class Mixer;
+class HotMic;
 class DialogSelectMaster;
 
 
@@ -81,6 +82,7 @@ public slots:
    void recreateGUI(bool saveConfig, const QString& mixerId, bool forceNewTab, bool reset);
    void recreateGUIwithSavingView();
    void newMixerShown(int tabIndex);
+   void hotMic();
    void slotSelectMaster();
 
 protected slots:
@@ -99,6 +101,7 @@ private:
    QTabWidget *m_wsMixers;
 
    KMixDockWidget *m_dockWidget;
+   HotMic *m_hm;
    DialogSelectMaster *m_dsm;
 
    QString m_defaultCardOnStart;
@@ -131,6 +134,7 @@ private slots:
    void slotIncreaseVolume();
    void slotDecreaseVolume();
    void slotMute();
+   void slotHotMicClose(QObject*);
    void slotSelectMasterClose(QObject*);
 
    void newView();
